@@ -31,7 +31,8 @@ class SignupView(APIView):
             return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = get_user_model().objects.create_user(username=username, password=password, email=email, phone_number=phone_number)
+            user = get_user_model().objects.create_user(username=username, password=password,
+                                                        email=email, phone_number=phone_number)
             serializer = UserSerializer(user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
