@@ -3,12 +3,30 @@ from django.db import models
 from django.core.validators import MinValueValidator
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=50, unique=True, default=None)
+    subcategories = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+
+class Subcategory (models.Model):
+    name = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'({self.name})-->({self.category})'
+
+
 class BaseMenuItem(models.Model):
     item_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, blank=True, null=True)
     image_path = models.ImageField(blank=True, null=True, upload_to='uploads/menu_items/')
     description = models.CharField(max_length=2000, blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)])
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)],)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, blank=True, null=True)
 
     class Meta:
         abstract = True
@@ -18,26 +36,6 @@ class BaseMenuItem(models.Model):
 
 
 class MenuItem(BaseMenuItem):
-    CATEGORY_CHOICES = [
-        ('BadoFood', 'Bado Food'),
-        ('Barbeque', 'Barbeque'),
-        ('Desserts', 'Desserts'),
-        ('DishDay', 'Dish of the Day'),
-        ('EnergyDrinks', 'Energy Drinks'),
-        ('FreakShake', 'Freak Shake'),
-        ('HotDrinks', 'Hot Drinks'),
-        ('IceCoffee', 'Ice Coffee'),
-        ('Juices', 'Juices'),
-        ('Kitchen', 'Kitchen'),
-        ('MilkShake', 'Milk Shake'),
-        ('Pans', 'Pans'),
-        ('Salads', 'Salads'),
-        ('SideDishes', 'Side Dishes'),
-        ('Smoothy', 'Smoothy'),
-        ('Soda', 'Soda'),
-        ('Tagin', 'Tagin'),
-    ]
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
 
     class Meta:
         db_table = 'menu_items'
