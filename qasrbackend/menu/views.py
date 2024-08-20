@@ -1,12 +1,15 @@
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from .models import MenuItem
 from .serializers import MenuItemSerializer
 
 
-class MenuItemView(APIView):
-
-    def get(self, request):
+@api_view('GET')
+def menu_items(request):
+    if request.method == 'GET':
         menu_items = MenuItem.objects.all()
         serializer = MenuItemSerializer(menu_items, many=True)
-        return Response(serializer.data)
+        return JsonResponse(serializer.data, safe=False)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
