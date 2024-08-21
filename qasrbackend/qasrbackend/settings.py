@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'rest_framework_social_oauth2',
 
     # Local apps
-    'rest_framework',
     'menu.apps.MenuConfig',
     'userdata.apps.UserdataConfig',
 ]
@@ -79,7 +78,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'social_django.middleware.SocialAuthEceptionMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'qasrbackend.urls'
