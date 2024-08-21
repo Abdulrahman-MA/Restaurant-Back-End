@@ -3,7 +3,6 @@ from .models import Users
 from rest_framework import serializers
 
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
@@ -28,3 +27,7 @@ class ResetPasswordEmailRequestSerializer(serializers.Serializer):
         if not Users.objects.filter(email=email).exists():
             raise serializers.ValidationError("Email address not found")
         return email
+
+
+class EmailChangeSerializer(serializers.Serializer):
+    new_email = serializers.EmailField(max_length=255)

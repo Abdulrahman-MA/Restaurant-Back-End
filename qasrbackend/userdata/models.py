@@ -1,10 +1,12 @@
 import uuid
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth import get_user_model
 from django.utils.crypto import get_random_string
 from django.contrib.auth.models import User
+
 
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None, phone_number=None):
@@ -68,31 +70,22 @@ class ResetPasswordToken(models.Model):
         super().save(*args, **kwargs)
 
 
-class CartItem(models.Model):
-    item_id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
-    name = models.CharField(max_length=255)
-    description = models.CharField(max_length=2000, blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='uploads/cart_items/')
-    item_type = models.CharField(max_length=255)
-
-    class Meta:
-        db_table = 'cart_items'
-
-    def __str__(self):
-        return f'{self.name} - {self.item_type}'
-
-
 class Order(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='orders')
-    cart_item = models.ForeignKey(CartItem, on_delete=models.CASCADE, related_name='orders')
+    username = models.CharField(max_length=255, null=True, blank=True)
+    address = models.CharField(max_length=255, null=True, blank=True)
+    phone_number = models.CharField(max_length=255, null=True, blank=True)
+    item_name = models.CharField(max_length=255, blank=True, null=True)
     quantity = models.IntegerField()
+
+    price = models.DecimalField(max_digits=10, decimal_places=2,
+                                validators=[MinValueValidator(0.01)], default=00.00)
 
     class Meta:
         db_table = 'orders'
 
     def __str__(self):
-        return f'Order by {self.user.username} for {self.cart_item.name}'
+        return f'Order by {self.user.username} and phone number:{self.phone_number}'
 
 
 class OrderHistory(models.Model):

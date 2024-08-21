@@ -7,6 +7,7 @@ from django.dispatch import receiver
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True, default=None)
     subcategories = models.BooleanField(default=False)
+    image_path = models.ImageField(default='uploads/categories/')
 
     def __str__(self):
         return self.name
@@ -23,7 +24,16 @@ class Subcategory (models.Model):
 class BaseMenuItem(models.Model):
     name = models.CharField(primary_key=True, max_length=255)
     description = models.TextField(max_length=2000, blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)], default=00.00)
+
+    half_price = models.DecimalField(max_digits=10, decimal_places=2,
+                                     validators=[MinValueValidator(0.01)], default=00.00)
+
+    third_price = models.DecimalField(max_digits=10, decimal_places=2,
+                                      validators=[MinValueValidator(0.01)], default=00.00)
+
+    quart_price = models.DecimalField(max_digits=10, decimal_places=2,
+                                      validators=[MinValueValidator(0.01)], default=00.00)
+
     category = models.ForeignKey(Category, on_delete=models.CASCADE, default='')
     image_path = models.ImageField(default='uploads/menu_items/', upload_to=f'uploads/menu_items/{category}')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, blank=True, null=True)
