@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth import get_user_model
 from django.utils.crypto import get_random_string
-
+from django.contrib.auth.models import User
 
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None, phone_number=None):
@@ -121,3 +121,8 @@ class Payment(models.Model):
 
     def __str__(self):
         return f'Payment {self.payment_id} for Order History {self.order_history.order.id}'
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)

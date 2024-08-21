@@ -1,7 +1,7 @@
-import uuid
 from django.db import models
 from django.core.validators import MinValueValidator
-from django.forms import Textarea
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 class Category(models.Model):
@@ -21,12 +21,11 @@ class Subcategory (models.Model):
 
 
 class BaseMenuItem(models.Model):
-    item_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255, blank=True, null=True)
-    image_path = models.ImageField(blank=True, null=True, upload_to='uploads/menu_items/')
+    name = models.CharField(primary_key=True, max_length=255)
     description = models.TextField(max_length=2000, blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)],)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)], default=00.00)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, default='')
+    image_path = models.ImageField(default='uploads/menu_items/', upload_to=f'uploads/menu_items/{category}')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, blank=True, null=True)
 
     class Meta:
@@ -43,3 +42,8 @@ class MenuItem(BaseMenuItem):
         verbose_name = 'Menu Item'
         verbose_name_plural = 'Menu Items'
         ordering = ['name']
+
+
+@receiver(post_delete, sender=MenuItem)
+def delete_image_file(sender, instance, **kwargs):
+    instance.image_path.delete(False)
