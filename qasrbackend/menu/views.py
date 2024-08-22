@@ -40,3 +40,4 @@ def item_detail(request, name, category):
         return JsonResponse({'item_info': serializer.data})
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+

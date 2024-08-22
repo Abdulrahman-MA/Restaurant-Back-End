@@ -7,7 +7,7 @@ from django.dispatch import receiver
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True, default=None)
     subcategories = models.BooleanField(default=False)
-    image_path = models.ImageField(default='uploads/categories/')
+    image_path = models.ImageField(default='uploads/menu_items/')
 
     def __str__(self):
         return self.name
@@ -35,7 +35,7 @@ class BaseMenuItem(models.Model):
                                       validators=[MinValueValidator(0.01)], default=00.00)
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, default='')
-    image_path = models.ImageField(default='uploads/menu_items/', upload_to=f'uploads/menu_items/{category}')
+    image_path = models.ImageField(default='uploads/menu_items/')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, blank=True, null=True)
 
     class Meta:

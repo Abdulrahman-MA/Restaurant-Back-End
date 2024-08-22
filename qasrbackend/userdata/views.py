@@ -1,30 +1,51 @@
-from django.contrib.auth.decorators import login_required
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.models import User
+from django.http import JsonResponse
 from .serializer import UserSerializer, ResetPasswordEmailRequestSerializer, EmailChangeSerializer
 from .models import ResetPasswordToken
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect
-from django.contrib import messages
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
 
 @api_view(['GET'])
-def login(self, request, *args, **kwargs):
-    username = request.data.get('username')
-    password = request.data.get('password')
-    phone_number = request.data.get('phone_number')
-    user = authenticate(username=username, password=password, phone_number=phone_number)
-
-    if user is not None:
-        serializer = UserSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    else:
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+def get_all_users(request):
+    try:
+        users = User.objects.all()  # Make sure 'User' is singular if using the default Django User model
+        serializer = UserSerializer(users, many=True)
+        return JsonResponse(serializer.data, status=status.HTTP_200_OK)  # Use Response instead of JsonResponse
+    except Exception as e:
+        print(f'Error: {e}')
+        return JsonResponse({"error": "Something went wrong"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
-def signup(self, request, *args, **kwargs):
+def login(request, *args, **kwargs):
+    try:
+        # Extract username and password from request data
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        # Authenticate user
+        user = authenticate(email=email, password=password)
+
+        if user is not None:
+            # Serialize the user data if authentication is successful
+            serializer = UserSerializer(user)
+            return JsonResponse(serializer.data, safe=False)
+        else:
+            # Return an error response if credentials are invalid
+            return JsonResponse({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+    except Exception as e:
+        # Log the exception and return a generic error response
+        print(f'Error: {e}')
+        return JsonResponse({"error": "Something went wrong"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def signup(request, *args, **kwargs):
     username = request.data.get('username')
     password = request.data.get('password')
     email = request.data.get('email')
