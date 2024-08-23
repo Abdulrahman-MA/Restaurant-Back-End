@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-#$u280@rwqx*6=6oy2xm9@%ilb_=@0*6j6*v$dt_vfd!)$ok!9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.11',]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'social_django',
     'rest_framework_social_oauth2',
+
+    'drf_yasg',
 
     # Local apps
     'menu.apps.MenuConfig',

@@ -1,10 +1,17 @@
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
-from rest_framework.views import APIView
 from .models import MenuItem, Category
 from .serializers import MenuItemSerializer, CategorySerializer
 from rest_framework import status
-from rest_framework.response import Response
+
+
+@api_view(['GET'])
+def category_items(request, category_name):
+    category = Category.objects.get(name=category_name)
+    menu_items = MenuItem.objects.filter(category=category)
+    serializer = MenuItemSerializer(menu_items, many=True)
+
+    return JsonResponse({'menu_items': serializer.data})
 
 
 @api_view(['GET'])
@@ -40,4 +47,3 @@ def item_detail(request, name, category):
         return JsonResponse({'item_info': serializer.data})
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-

@@ -1,91 +1,267 @@
-
-from django.contrib.auth import authenticate, get_user_model
-from django.contrib.auth.models import User
 from django.http import JsonResponse
-from .serializer import UserSerializer, ResetPasswordEmailRequestSerializer, EmailChangeSerializer
-from .models import ResetPasswordToken
-from django.contrib.auth.decorators import login_required
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from .models import Users, ResetPasswordToken, Order, OrderHistory, Payment, Profile
+from .serializer import (
+    UserSerializer, ResetPasswordTokenSerializer, OrderSerializer,
+    OrderHistorySerializer, PaymentSerializer, ProfileSerializer
+)
 
 
-@api_view(['GET'])
-def get_all_users(request):
-    try:
-        users = User.objects.all()  # Make sure 'User' is singular if using the default Django User model
+# Users
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def user_list_create(request):
+    if request.method == 'GET':
+        users = Users.objects.all()
         serializer = UserSerializer(users, many=True)
-        return JsonResponse(serializer.data, status=status.HTTP_200_OK)  # Use Response instead of JsonResponse
-    except Exception as e:
-        print(f'Error: {e}')
-        return JsonResponse({"error": "Something went wrong"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return JsonResponse(serializer.data, status.HTTP_302_FOUND)
+
+    elif request.method == 'POST':
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-def login(request, *args, **kwargs):
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def user_detail(request, pk):
     try:
-        # Extract username and password from request data
-        email = request.data.get('email')
-        password = request.data.get('password')
+        user = Users.objects.get(pk=pk)
+    except Users.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Authenticate user
-        user = authenticate(email=email, password=password)
-
-        if user is not None:
-            # Serialize the user data if authentication is successful
-            serializer = UserSerializer(user)
-            return JsonResponse(serializer.data, safe=False)
-        else:
-            # Return an error response if credentials are invalid
-            return JsonResponse({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-    except Exception as e:
-        # Log the exception and return a generic error response
-        print(f'Error: {e}')
-        return JsonResponse({"error": "Something went wrong"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['POST'])
-def signup(request, *args, **kwargs):
-    username = request.data.get('username')
-    password = request.data.get('password')
-    email = request.data.get('email')
-    phone_number = request.data.get('phone_number')
-
-    if not username or not password or not email or not phone_number:
-        return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        user = get_user_model().objects.create_user(username=username, password=password,
-                                                    email=email, phone_number=phone_number)
+    if request.method == 'GET':
         serializer = UserSerializer(user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PATCH':
+        serializer = UserSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        user.delete()
+        return JsonResponse({'error': 'No Content'}, status=status.HTTP_204_NO_CONTENT)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['PATCH'])
-def reset_password(request):
-    serializer_class = ResetPasswordEmailRequestSerializer
-    serializer = serializer_class(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data['email']
-    user = get_user_model().objects.filter(email=email).first()
+# Reset Password Token
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def reset_password_token_list_create(request):
+    if request.method == 'GET':
+        tokens = ResetPasswordToken.objects.all()
+        serializer = ResetPasswordTokenSerializer(tokens, many=True)
+        return JsonResponse(serializer.data)
 
-    if user is not None:
-        token = ResetPasswordToken.objects.create(user=user)
+    elif request.method == 'POST':
+        serializer = ResetPasswordTokenSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"success": "Password reset email sent"}, status=status.HTTP_200_OK)
-    else:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def reset_password_token_detail(request, pk):
+    try:
+        token = ResetPasswordToken.objects.get(pk=pk)
+    except ResetPasswordToken.DoesNotExist:
+        return JsonResponse({'error': 'Reset Password Token not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = ResetPasswordTokenSerializer(token)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PATCH':
+        serializer = ResetPasswordTokenSerializer(token, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        token.delete()
+        return JsonResponse({'error': 'No Content'}, status=status.HTTP_204_NO_CONTENT)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@login_required
-@api_view(['PATCH'])
-def change_email(request):
-    serializer = EmailChangeSerializer(data=request.data)
-    if serializer.is_valid():
-        new_email = serializer.validated_data['new_email']
-        request.user.email = new_email
-        request.user.save()
-        return Response({'detail': 'Email updated successfully'}, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# Order
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def order_list_create(request):
+    if request.method == 'GET':
+        orders = Order.objects.all()
+        serializer = OrderSerializer(orders, many=True)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = OrderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def order_detail(request, pk):
+    try:
+        order = Order.objects.get(pk=pk)
+    except Order.DoesNotExist:
+        return JsonResponse({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = OrderSerializer(order)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PATCH':
+        serializer = OrderSerializer(order, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        order.delete()
+        return JsonResponse({'error': 'No Content'}, status=status.HTTP_204_NO_CONTENT)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Order History
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def order_history_list_create(request):
+    if request.method == 'GET':
+        order_histories = OrderHistory.objects.all()
+        serializer = OrderHistorySerializer(order_histories, many=True)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = OrderHistorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def order_history_detail(request, pk):
+    try:
+        order_history = OrderHistory.objects.get(pk=pk)
+    except OrderHistory.DoesNotExist:
+        return JsonResponse({'error': 'Order History not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = OrderHistorySerializer(order_history)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PATCH':
+        serializer = OrderHistorySerializer(order_history, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        order_history.delete()
+        return JsonResponse({'error': 'No Content'}, status=status.HTTP_204_NO_CONTENT)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Payment
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def payment_list_create(request):
+    if request.method == 'GET':
+        payments = Payment.objects.all()
+        serializer = PaymentSerializer(payments, many=True)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = PaymentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def payment_detail(request, pk):
+    try:
+        payment = Payment.objects.get(pk=pk)
+    except Payment.DoesNotExist:
+        return JsonResponse({'error': 'Payment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = PaymentSerializer(payment)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PATCH':
+        serializer = PaymentSerializer(payment, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        payment.delete()
+        return JsonResponse({'error': 'No Content'}, status=status.HTTP_204_NO_CONTENT)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Profile
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def profile_list_create(request):
+    if request.method == 'GET':
+        profiles = Profile.objects.all()
+        serializer = ProfileSerializer(profiles, many=True)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = ProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def profile_detail(request, pk):
+    try:
+        profile = Profile.objects.get(pk=pk)
+    except Profile.DoesNotExist:
+        return JsonResponse({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = ProfileSerializer(profile)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PATCH':
+        serializer = ProfileSerializer(profile, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        profile.delete()
+        return JsonResponse({'error': 'No Content'}, status=status.HTTP_204_NO_CONTENT)
+    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
