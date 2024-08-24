@@ -32,7 +32,6 @@ def signup(request):
     return JsonResponse({'error': 'Bad Request', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @swagger_auto_schema(
     method='POST',
     operation_description="Retrieve users from the Database.",
@@ -80,9 +79,8 @@ def user_list_create(request):
     responses={201: UserSerializer()},
 )
 @swagger_auto_schema(
-    method='PATCH',
+    method='DELETE',
     operation_description="Delete user using the User ID.",
-    responses={201: UserSerializer()},
 )
 # Applying the requirements,description on the Views
 @api_view(['GET', 'PATCH', 'DELETE'])
@@ -94,13 +92,13 @@ def user_detail(request, pk):
         return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     if request.method == 'GET':
         serializer = UserSerializer(user)
-        return JsonResponse(serializer.data)
+        return JsonResponse(serializer.data, status=status.HTTP_302_FOUND)
 
     elif request.method == 'PATCH':
         serializer = UserSerializer(user, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data)
+            return JsonResponse(serializer.data, sataus=status.HTTP_200_OK)
         return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'DELETE':
@@ -126,6 +124,12 @@ def reset_password_token_list(request):
     return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='POST',
+    operation_description="Send am email to reset password, requiring only the email",
+    request_body=UserSerializer,
+    responses={201: UserSerializer()},
+)
 @api_view(['POST'])
 def request_password_reset(request):
     email = request.data.get('email')
@@ -159,6 +163,12 @@ def request_password_reset(request):
 
 
 # This function allows users to reset their password using the token they received.
+@swagger_auto_schema(
+    method='POST',
+    operation_description="Reset the password using the token , requires token,newpassword,user_id",
+    request_body=UserSerializer,
+    responses={201: UserSerializer()},
+)
 @api_view(['POST'])
 def reset_password(request):
     token = request.data.get('token')
@@ -169,7 +179,7 @@ def reset_password(request):
         user_id = RefreshToken(token).get('user_id')
         user = Users.objects.get(pk=user_id)
     except Exception as e:
-        return JsonResponse({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'error': e}, status=status.HTTP_400_BAD_REQUEST)
 
     # Set the new password
     user.set_password(new_password)
