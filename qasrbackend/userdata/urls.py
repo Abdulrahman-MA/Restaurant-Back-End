@@ -1,8 +1,9 @@
 from django.urls import path
 from .views import (
-    user_list_create, user_detail, reset_password_token_list_create, reset_password_token_detail,
+    user_list_create, user_detail, reset_password_token_list, request_password_reset,
     order_list_create, order_detail, order_history_list_create, order_history_detail,
-    payment_list_create, payment_detail, profile_list_create, profile_detail, login, signup
+    payment_list_create, payment_detail, profile_list_create, profile_detail, login,
+    signup, reset_password
 )
 
 urlpatterns = [
@@ -14,8 +15,9 @@ urlpatterns = [
 
 
     # Reset Password Token URLs
-    path('reset-tokens/', reset_password_token_list_create, name='reset-token-list-create'),
-    path('reset-tokens/<int:pk>/', reset_password_token_detail, name='reset-token-detail'),
+    path('reset-tokens/', reset_password_token_list, name='reset-token-list-create'),
+    path('password-reset-request/<str:email>', request_password_reset, name='reset-token-list-create'),
+    path('reset-tokens/<str:token>/', reset_password, name='reset-password'),
 
     # Order URLs
     path('orders/', order_list_create, name='order-list-create'),
