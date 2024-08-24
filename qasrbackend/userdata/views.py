@@ -2,6 +2,8 @@ from django.http import JsonResponse
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from django.core.mail import send_mail
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from .models import Users, ResetPasswordToken, Order, OrderHistory, Payment, Profile
@@ -21,8 +23,14 @@ def signup(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        return JsonResponse({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+        refresh = RefreshToken.for_user(user)
+        return JsonResponse({
+            'message': 'User created successfully',
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }, status=status.HTTP_201_CREATED)
     return JsonResponse({'error': 'Bad Request', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @swagger_auto_schema(
     method='POST',
@@ -61,8 +69,18 @@ def user_list_create(request):
 
 @swagger_auto_schema(
     method='GET',
-    operation_description="Retrieve a specific user from the Database.and requires the Email",
+    operation_description="Retrieve a specific user from the Database.and requires the User ID.",
     responses={200: UserSerializer(many=True)}
+)
+@swagger_auto_schema(
+    method='PATCH',
+    operation_description="Create a new user.",
+    request_body=UserSerializer,
+    responses={201: UserSerializer()},
+)
+@swagger_auto_schema(
+    method='DELETE',
+    operation_description="Delete user using the User ID.",
 )
 # Applying the requirements,description on the Views
 @api_view(['GET', 'PATCH', 'DELETE'])
@@ -74,13 +92,13 @@ def user_detail(request, pk):
         return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     if request.method == 'GET':
         serializer = UserSerializer(user)
-        return JsonResponse(serializer.data)
+        return JsonResponse(serializer.data, status=status.HTTP_302_FOUND)
 
     elif request.method == 'PATCH':
         serializer = UserSerializer(user, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data)
+            return JsonResponse(serializer.data, sataus=status.HTTP_200_OK)
         return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'DELETE':
@@ -90,46 +108,84 @@ def user_detail(request, pk):
 
 
 # Reset Password Token
-@api_view(['GET', 'POST'])
+@swagger_auto_schema(
+    method='GET',
+    operation_description="Retrieve All of the password reset tokens",
+    responses={200: UserSerializer(many=True)}
+)
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def reset_password_token_list_create(request):
+def reset_password_token_list(request):
     if request.method == 'GET':
         tokens = ResetPasswordToken.objects.all()
         serializer = ResetPasswordTokenSerializer(tokens, many=True)
         return JsonResponse(serializer.data)
 
-    elif request.method == 'POST':
-        serializer = ResetPasswordTokenSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
     return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PATCH', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def reset_password_token_detail(request, pk):
+@swagger_auto_schema(
+    method='POST',
+    operation_description="Send am email to reset password, requiring only the email",
+    request_body=UserSerializer,
+    responses={201: UserSerializer()},
+)
+@api_view(['POST'])
+def request_password_reset(request):
+    email = request.data.get('email')
     try:
-        token = ResetPasswordToken.objects.get(pk=pk)
-    except ResetPasswordToken.DoesNotExist:
-        return JsonResponse({'error': 'Reset Password Token not found'}, status=status.HTTP_404_NOT_FOUND)
+        user = Users.objects.get(email=email)
+    except Users.DoesNotExist:
+        return JsonResponse({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'GET':
-        serializer = ResetPasswordTokenSerializer(token)
-        return JsonResponse(serializer.data)
+    # Create a reset token using JWT
+    refresh = RefreshToken.for_user(user)
+    reset_token = str(refresh.access_token)
 
-    elif request.method == 'PATCH':
-        serializer = ResetPasswordTokenSerializer(token, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data)
-        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    # Optionally, you can save the token in a model (e.g., ResetPasswordToken) for tracking
+    ResetPasswordToken.objects.create(
+        user=user,
+        token=reset_token,
+        created_at=timezone.now()
+    )
 
-    elif request.method == 'DELETE':
-        token.delete()
-        return JsonResponse({'error': 'No Content'}, status=status.HTTP_204_NO_CONTENT)
-    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+    # Send the token via email
+    send_mail(
+        'Password Reset Request',
+        f'Your password reset token is: {reset_token}\n'
+        f'This email will expire after 10 minutes',
+        'Abdurlrahman_MA@outlook.com',
+        [email],
+        fail_silently=False,
+    )
+
+    return JsonResponse({'message': 'Password reset token sent'}, status=status.HTTP_200_OK)
+
+
+# This function allows users to reset their password using the token they received.
+@swagger_auto_schema(
+    method='POST',
+    operation_description="Reset the password using the token , requires token,newpassword,user_id",
+    request_body=UserSerializer,
+    responses={201: UserSerializer()},
+)
+@api_view(['POST'])
+def reset_password(request):
+    token = request.data.get('token')
+    new_password = request.data.get('new_password')
+
+    try:
+        # Decode the token and retrieve the user
+        user_id = RefreshToken(token).get('user_id')
+        user = Users.objects.get(pk=user_id)
+    except Exception as e:
+        return JsonResponse({'error': e}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Set the new password
+    user.set_password(new_password)
+    user.save()
+
+    return JsonResponse({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
 
 # Order

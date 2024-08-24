@@ -40,7 +40,8 @@ class UserManager(BaseUserManager):
 class Users(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(unique=True, max_length=255)
-    phone_number = PhoneNumberField(unique=True, primary_key=True)
+    user_id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    phone_number = PhoneNumberField(unique=True, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -61,7 +62,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
 class ResetPasswordToken(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    token = models.CharField(max_length=64, unique=True)
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
