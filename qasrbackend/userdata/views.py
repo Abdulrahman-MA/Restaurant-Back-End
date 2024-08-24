@@ -1,4 +1,6 @@
 from django.http import JsonResponse
+from rest_framework_simplejwt.tokens import RefreshToken
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -9,8 +11,46 @@ from .serializer import (
 )
 
 
-# Users
-@api_view(['GET', 'POST'])
+@swagger_auto_schema(
+    method='POST',
+    operation_description="Retrieve users from the Database.",
+    responses={200: UserSerializer(many=True)}
+)
+@api_view(['POST'])
+def signup(request):
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        return JsonResponse({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+    return JsonResponse({'error': 'Bad Request', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+@swagger_auto_schema(
+    method='POST',
+    operation_description="Retrieve users from the Database.",
+    request_body=UserSerializer,
+    responses={200: UserSerializer(many=True)}
+)
+@api_view(['POST'])
+def login(request):
+    email = request.data.get('email')
+    password = request.data.get('password')
+    user = Users.objects.filter(email=email).first()
+    if user and user.check_password(password):
+        refresh = RefreshToken.for_user(user)
+        return JsonResponse({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        })
+    return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Applying the description on the UserViews
+@swagger_auto_schema(
+    method='GET',
+    operation_description="Retrieve users from the Database.",
+    responses={200: UserSerializer(many=True)}
+)
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_list_create(request):
     if request.method == 'GET':
@@ -18,15 +58,13 @@ def user_list_create(request):
         serializer = UserSerializer(users, many=True)
         return JsonResponse(serializer.data, status.HTTP_302_FOUND)
 
-    elif request.method == 'POST':
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-        return JsonResponse({'error': 'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
-    return JsonResponse({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@swagger_auto_schema(
+    method='GET',
+    operation_description="Retrieve a specific user from the Database.and requires the Email",
+    responses={200: UserSerializer(many=True)}
+)
+# Applying the requirements,description on the Views
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def user_detail(request, pk):
@@ -34,7 +72,6 @@ def user_detail(request, pk):
         user = Users.objects.get(pk=pk)
     except Users.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
     if request.method == 'GET':
         serializer = UserSerializer(user)
         return JsonResponse(serializer.data)

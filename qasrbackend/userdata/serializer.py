@@ -5,7 +5,17 @@ from .models import Users, ResetPasswordToken, Order, OrderHistory, Payment, Pro
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
-        fields = ['user_id', 'username', 'email', 'phone_number']
+        fields = ['username', 'email', 'phone_number', 'password']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = Users.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            phone_number=validated_data.get('phone_number')
+        )
+        return user
 
 
 class ResetPasswordTokenSerializer(serializers.ModelSerializer):

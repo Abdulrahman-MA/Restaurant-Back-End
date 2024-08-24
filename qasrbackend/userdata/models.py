@@ -1,10 +1,10 @@
-import uuid
 from django.core.validators import MinValueValidator
-from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
-from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth import get_user_model
 from django.utils.crypto import get_random_string
+import uuid
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
+from django.db import models
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 class UserManager(BaseUserManager):
@@ -19,7 +19,6 @@ class UserManager(BaseUserManager):
             username=username,
             phone_number=phone_number,
         )
-
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -31,9 +30,9 @@ class UserManager(BaseUserManager):
             password=password,
             phone_number=phone_number,
         )
-        user.is_admin = True
-        user.is_superuser = True
         user.is_staff = True
+        user.is_superuser = True
+        user.is_active = True
         user.save(using=self._db)
         return user
 
@@ -41,8 +40,9 @@ class UserManager(BaseUserManager):
 class Users(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(unique=True, max_length=255)
-    user_id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
-    phone_number = PhoneNumberField(unique=True, null=True, blank=True)
+    phone_number = PhoneNumberField(unique=True, primary_key=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -105,7 +105,7 @@ class OrderHistory(models.Model):
 
 class Payment(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, primary_key=True,
-                                 related_name='payment',default=0)
+                                 related_name='payment', default=0)
 
     payment_amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_date = models.DateField(blank=True, null=True)
