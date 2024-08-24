@@ -2,13 +2,16 @@ from django.urls import path
 from .views import (
     user_list_create, user_detail, reset_password_token_list_create, reset_password_token_detail,
     order_list_create, order_detail, order_history_list_create, order_history_detail,
-    payment_list_create, payment_detail, profile_list_create, profile_detail
+    payment_list_create, payment_detail, profile_list_create, profile_detail, login, signup
 )
 
 urlpatterns = [
     # User URLs
-    path('allusers/', user_list_create, name='user-list-create'),
+    path('users/allusers/', user_list_create, name='user-list-create'),
     path('users/<uuid:pk>/', user_detail, name='user-detail'),
+    path('users/login', login, name='login'),
+    path('users/signup', signup, name='signup'),
+
 
     # Reset Password Token URLs
     path('reset-tokens/', reset_password_token_list_create, name='reset-token-list-create'),
