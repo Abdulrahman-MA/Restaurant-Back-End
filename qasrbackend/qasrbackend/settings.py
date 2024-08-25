@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+from datetime import timedelta
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-#$u280@rwqx*6=6oy2xm9@%ilb_=@0*6j6*v$dt_vfd!)$ok!9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.11',]
+ALLOWED_HOSTS = ['192.168.1.11']
 
 
 # Application definition
@@ -55,6 +57,8 @@ INSTALLED_APPS = [
     'social_django',
     'rest_framework_social_oauth2',
 
+    'drf_yasg',
+
     # Local apps
     'menu.apps.MenuConfig',
     'userdata.apps.UserdataConfig',
@@ -67,7 +71,28 @@ REST_FRAMEWORK = {
         'rest_framework_social_oauth2.authentication.SocialAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+}
+
+SIMPLE_JWT = {
+    # Token Expiry Settings
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),  # How long the access token is valid
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # How long the refresh token is valid
+
+    # Token Settings
+    'ALGORITHM': 'HS256',  # The algorithm used for token signing
+    'SIGNING_KEY': SECRET_KEY,  # Uses Django's SECRET_KEY to sign the tokens
+
+    # Token Header
+    'AUTH_HEADER_TYPES': ('Bearer',),  # The prefix used in the Authorization header
+
+    # Token User Identification
+    'USER_ID_FIELD': 'user_id',  # Field in your user model used to identify the user
+    'USER_ID_CLAIM': 'user_id',  # The claim key in the token payload for the user ID
+
+    # Blacklisting (Optional, but recommended)
+    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist old refresh tokens if rotated
 }
 
 MIDDLEWARE = [
@@ -157,7 +182,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#social app custom settings
+# social app custom settings
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.facebook.FacebookOAuth2',
     'social_core.backends.google.GoogleOAuth2',
@@ -183,3 +208,11 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('GOCSPX-e9t3b-SmHloHeCB5q0Q3ZLRaAAU
 
 SOCIAL_AUTH_FACEBOOK_KEY = os.getenv('476533208596946')
 SOCIAL_AUTH_FACEBOOK_SECRET = os.getenv('6d3dc4ffbd5dceca72ed46da7d018397')
+
+# Email Bot Settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'atawfek150@gmail.com'
+EMAIL_HOST_PASSWORD = 'xgyu yhtr mjuz sfdy'

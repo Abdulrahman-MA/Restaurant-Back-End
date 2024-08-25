@@ -1,12 +1,30 @@
 from django.http import JsonResponse
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
-from rest_framework.views import APIView
 from .models import MenuItem, Category
 from .serializers import MenuItemSerializer, CategorySerializer
 from rest_framework import status
-from rest_framework.response import Response
 
 
+@swagger_auto_schema(
+    method='GET',
+    operation_description="Retrieve the items in a specific category.",
+    responses={200: MenuItemSerializer(many=True)}
+)
+@api_view(['GET'])
+def category_items(request, category_name):
+    category = Category.objects.get(name=category_name)
+    menu_items = MenuItem.objects.filter(category=category)
+    serializer = MenuItemSerializer(menu_items, many=True)
+
+    return JsonResponse({'menu_items': serializer.data})
+
+
+@swagger_auto_schema(
+    method='GET',
+    operation_description="Retrieve all menu items.",
+    responses={200: MenuItemSerializer(many=True)}
+)
 @api_view(['GET'])
 def menu_items(request):
     if request.method == 'GET':
@@ -17,6 +35,11 @@ def menu_items(request):
         return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+@swagger_auto_schema(
+    method='GET',
+    operation_description="Retrieve all the categories in the menu.",
+    responses={200: CategorySerializer(many=True)}
+)
 @api_view(['GET'])
 def categories(request):
     if request.method == 'GET':
@@ -27,6 +50,11 @@ def categories(request):
         return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+@swagger_auto_schema(
+    method='GET',
+    operation_description="Retrieve details of a specific menu item.",
+    responses={200: MenuItemSerializer()}
+)
 @api_view(['GET'])
 def item_detail(request, name, category):
 
@@ -40,4 +68,3 @@ def item_detail(request, name, category):
         return JsonResponse({'item_info': serializer.data})
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
