@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+import random
+import uuid
+
+=======
+>>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
 from django.http import JsonResponse
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
@@ -49,7 +55,11 @@ def login(request):
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         })
+<<<<<<< HEAD
+    return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+=======
     return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+>>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
 
 
 # Applying the description on the UserViews
@@ -138,11 +148,18 @@ def request_password_reset(request):
     except Users.DoesNotExist:
         return JsonResponse({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
+<<<<<<< HEAD
+    # Create a reset token using a 4-digit numeric token
+    reset_token = f"{random.randint(10000, 99999)}"
+
+    # Save the token
+=======
     # Create a reset token using JWT
     refresh = RefreshToken.for_user(user)
     reset_token = str(refresh.access_token)
 
     # Optionally, you can save the token in a model (e.g., ResetPasswordToken) for tracking
+>>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
     ResetPasswordToken.objects.create(
         user=user,
         token=reset_token,
@@ -152,9 +169,14 @@ def request_password_reset(request):
     # Send the token via email
     send_mail(
         'Password Reset Request',
+<<<<<<< HEAD
+        f'Your password reset token is: {reset_token}\nThis email will expire after 10 minutes',
+        'atawfek150@gmail.com',
+=======
         f'Your password reset token is: {reset_token}\n'
         f'This email will expire after 10 minutes',
         'Abdurlrahman_MA@outlook.com',
+>>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
         [email],
         fail_silently=False,
     )
