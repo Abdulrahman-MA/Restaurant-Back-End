@@ -10,6 +10,7 @@ def category_image_path(instance, filename):
 
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True, default=None)
+    ar_name = models.CharField(max_length=50, unique=True, default=None)
     subcategories = models.BooleanField(default=False)
     image_path = models.ImageField(default='uploads/menu_items/', upload_to=category_image_path)
 
@@ -19,6 +20,7 @@ class Category(models.Model):
 
 class Subcategory (models.Model):
     name = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    ar_name = models.CharField(max_length=50, unique=True, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -31,7 +33,9 @@ def food_image_path(instance, filename):
 
 class BaseMenuItem(models.Model):
     name = models.CharField(primary_key=True, max_length=255, default=None)
+    ar_name = models.CharField(primary_key=True, max_length=255, default=None)
     description = models.TextField(max_length=2000, blank=True, null=True)
+    ar_description = models.TextField(max_length=2000, blank=True, null=True)
 
     price = models.DecimalField(max_digits=10, decimal_places=2,
                                 validators=[MinValueValidator(0.01)], default=00.00)
