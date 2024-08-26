@@ -10,22 +10,14 @@ urlpatterns = [
     # User URLs
     path('users/allusers/', user_list_create, name='user-list-create'),
     path('users/<uuid:pk>/', user_detail, name='user-detail'),
-<<<<<<< HEAD
     path('users/login/', login, name='login'),
     path('users/signup/', signup, name='signup'),
-=======
-    path('users/login', login, name='login'),
-    path('users/signup', signup, name='signup'),
->>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
+
 
 
     # Reset Password Token URLs
     path('reset-tokens/', reset_password_token_list, name='reset-token-list-create'),
-<<<<<<< HEAD
     path('password-reset-request/', request_password_reset, name='reset-token-list-create'),
-=======
-    path('password-reset-request/<str:email>', request_password_reset, name='reset-token-list-create'),
->>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
     path('reset-tokens/<str:token>/', reset_password, name='reset-password'),
 
     # Order URLs

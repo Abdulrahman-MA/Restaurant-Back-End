@@ -1,13 +1,10 @@
-<<<<<<< HEAD
 import random
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.utils import timezone
-=======
 from django.core.validators import MinValueValidator
 from django.contrib.auth import get_user_model
->>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
 from django.utils.crypto import get_random_string
 import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
@@ -49,18 +46,12 @@ class Users(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(unique=True, max_length=255)
     user_id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
-<<<<<<< HEAD
     phone_number = models.CharField(max_length=11, unique=True, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     last_login = models.DateTimeField(default=timezone.now)
     is_superuser = models.BooleanField(default=False)
-=======
-    phone_number = PhoneNumberField(unique=True, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
 
->>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
@@ -77,15 +68,9 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
 
 class ResetPasswordToken(models.Model):
-<<<<<<< HEAD
     user = models.ForeignKey('Users', on_delete=models.CASCADE)
     token = models.CharField(max_length=4, unique=True)  # Token length is 4 characters
     created_at = models.DateTimeField(default=timezone.now)
-=======
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
->>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
 
     def save(self, *args, **kwargs):
         if not self.token:
@@ -95,13 +80,10 @@ class ResetPasswordToken(models.Model):
             raise ValidationError("Token must be exactly 5 numeric characters.")
         super().save(*args, **kwargs)
 
-<<<<<<< HEAD
     def _generate_numeric_token(self):
         # Generate a random 4-digit numeric token
         return f"{random.randint(10000, 99999)}"
 
-=======
->>>>>>> a7ff83acb4239816b8c6a8328daab8a5a1ac0fb2
     class Meta:
         db_table = 'reset_password_tokens'
 
