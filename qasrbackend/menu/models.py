@@ -33,7 +33,7 @@ def food_image_path(instance, filename):
 
 class BaseMenuItem(models.Model):
     name = models.CharField(primary_key=True, max_length=255, default=None)
-    ar_name = models.CharField(primary_key=True, max_length=255, default=None)
+    ar_name = models.CharField(max_length=255, default=None)
     description = models.TextField(max_length=2000, blank=True, null=True)
     ar_description = models.TextField(max_length=2000, blank=True, null=True)
 
