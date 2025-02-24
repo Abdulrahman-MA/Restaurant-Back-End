@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+from decouple import config
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -22,12 +23,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#$u280@rwqx*6=6oy2xm9@%ilb_=@0*6j6*v$dt_vfd!)$ok!9'
+SECRET_KEY = config('SECRET_KEY')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.11']
+ALLOWED_HOSTS = ['192.168.1.11','127.0.0.1']
 
 
 # Application definition
@@ -202,17 +204,16 @@ SOCIAL_AUTH_PIPELINE = (
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'https://www.googleapis.com/auth/user.phonenumbers.read']
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email', 'user_mobile_phone']
 
-
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('466631371958-1c5fp207id9d437bvjuanj08bu0fpnsj.apps.googleusercontent.com')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('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')
-
-SOCIAL_AUTH_FACEBOOK_KEY = os.getenv('476533208596946')
-SOCIAL_AUTH_FACEBOOK_SECRET = os.getenv('6d3dc4ffbd5dceca72ed46da7d018397')
-
 # Email Bot Settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 
-EMAIL_HOST_USER = env
-EMAIL_HOST_PASSWORD = env
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+
+SOCIAL_AUTH_FACEBOOK_KEY = config('SOCIAL_AUTH_FACEBOOK_KEY')
+SOCIAL_AUTH_FACEBOOK_SECRET = config('SOCIAL_AUTH_FACEBOOK_SECRET')
+
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
